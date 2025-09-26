@@ -12,13 +12,12 @@ contract MerchantRegistry is Ownable {
 
     struct MerchantConfig {
         address merchantPayout;
-        address payoutToken;      // stablecoin (must be allowed)
-        PayoutMode mode;          // payout mode
-        uint16 splitBps;          // for SPLIT: 0..10000
-        uint16 protocolFeeBps;    // optional protocol fee
-        address feeRecipient;     // where fees go
-        address vault;            // ERC-4626 vault for shares
-        bool exists;              // marker
+        address payoutToken; // stablecoin (must be allowed)
+        PayoutMode mode; // payout mode
+        uint16 splitBps; // for SPLIT: 0..10000
+        uint16 protocolFeeBps; // optional protocol fee
+        address feeRecipient; // where fees go
+        bool exists; // marker
     }
 
     constructor() Ownable(msg.sender) {}
@@ -39,8 +38,7 @@ contract MerchantRegistry is Ownable {
         PayoutMode mode,
         uint16 splitBps,
         uint16 protocolFeeBps,
-        address feeRecipient,
-        address vault
+        address feeRecipient
     ) external {
         require(!merchantConfigs[merchant].exists, "already registered");
         require(splitBps <= 10_000, "bad split");
@@ -54,7 +52,6 @@ contract MerchantRegistry is Ownable {
             splitBps: splitBps,
             protocolFeeBps: protocolFeeBps,
             feeRecipient: feeRecipient,
-            vault: vault,
             exists: true
         });
 
@@ -67,8 +64,7 @@ contract MerchantRegistry is Ownable {
         PayoutMode mode,
         uint16 splitBps,
         uint16 protocolFeeBps,
-        address feeRecipient,
-        address vault
+        address feeRecipient
     ) external {
         MerchantConfig storage cfg = merchantConfigs[merchant];
         require(cfg.exists, "not registered");
@@ -82,7 +78,6 @@ contract MerchantRegistry is Ownable {
         cfg.splitBps = splitBps;
         cfg.protocolFeeBps = protocolFeeBps;
         cfg.feeRecipient = feeRecipient;
-        cfg.vault = vault;
 
         emit MerchantUpdated(merchant);
     }
