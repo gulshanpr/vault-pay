@@ -3,12 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "test:sdk": "node src/sdk/test-runner.js",
-    "sdk:example": "node src/sdk/example.js",
-    "sdk:validate": "node src/sdk/validate.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@1inch/cross-chain-sdk": "^1.0.2",
