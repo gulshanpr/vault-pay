@@ -16,6 +16,7 @@ import {
   ArrowLeftRight,
   Building2,
   CreditCard,
+  ArrowRightLeft,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
   { name: "Merchant Setup", href: "/merchant-setup", icon: Building2 },
   { name: "Swap", href: "/swap", icon: ArrowLeftRight },
+  { name: "Vault Router", href: "/vault-router", icon: ArrowRightLeft },
   { name: "Wallet", href: "/wallet", icon: Wallet },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
