@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React from "react";
-import { PrivyProvider } from "@privy-io/react-auth";
-import { WagmiProvider } from "@privy-io/wagmi";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from 'react';
+import { PrivyProvider } from '@privy-io/react-auth';
+import { WagmiProvider } from '@privy-io/wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { privyConfig } from "./config/privyConfig";
-import { wagmiConfig } from "./wagmiConfig";
+import { privyConfig } from './privyConfig';
+import { wagmiConfig } from './wagmiConfig';
 
 const queryClient = new QueryClient();
 

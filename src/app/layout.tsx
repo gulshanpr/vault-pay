@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Providers from "./providers";
+import Providers from "./config/providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: " Vault-Pay - Omnichain Merchant Payments",
-  description: "The first omnichain merchant payment system where settlements come as yield-bearing vault shares, not idle stablecoins.",
+  description:
+    "The first omnichain merchant payment system where settlements come as yield-bearing vault shares, not idle stablecoins.",
 };
 
 export default function RootLayout({
@@ -28,9 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
