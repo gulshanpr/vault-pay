@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chainId: string } }
+  context: { params: Promise<{ chainId: string }> }
 ) {
   try {
+    const params = await context.params;
     const chainId = params.chainId;
 
     console.log(`API Route: Fetching swap tokens for chain ${chainId}`);
@@ -18,7 +19,7 @@ export async function GET(
 
     const response = await fetch(`https://api.1inch.dev/swap/v6.1/${chainId}/tokens`, {
       headers: {
-        'Authorization': 'Bearer ZpnUEETQ0EDLZ1KzMErFgFASf1kzU80L',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_DEV_PORTAL_KEY}`,
       },
     });
 
@@ -38,11 +39,17 @@ export async function GET(
 
     return NextResponse.json(data);
   } catch (error) {
+    const params = await context.params;
     console.error(`Error fetching swap tokens for chain ${params.chainId}:`, error);
 
     // Return fallback tokens on error
     const fallbackTokens = getFallbackTokensForSwap(params.chainId);
-    return NextResponse.json(fallbackTokens);
+    return NextResponse.json({
+      error: 'Failed to fetch swap tokens',
+      details: error instanceof Error ? error.message : String(error),
+      fallback: true,
+      tokens: fallbackTokens.tokens
+    });
   }
 }
 
