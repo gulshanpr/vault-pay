@@ -200,7 +200,7 @@ export function useSwap(): UseSwapReturn {
                 ? HashLock.forSingleFill(secrets[0])
                 : HashLock.forMultipleFills(
                     secretHashes.map((secretHash, i) =>
-                        solidityPackedKeccak256(['uint64', 'bytes32'], [i, secretHash.toString()])
+                        solidityPackedKeccak256(['uint64', 'bytes32'], [i, secretHash.toString()]) as any
                     )
                 );
 

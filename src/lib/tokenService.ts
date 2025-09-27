@@ -118,10 +118,15 @@ export class TokenService {
 
           if (response.ok) {
             const text = await response.text();
-            console.log('TokenService: Raw response text length:', text.length);
-            this.chainsData = JSON.parse(text);
-            console.log('TokenService: Loaded chains from JSON file:', this.chainsData.length, 'chains');
-            return this.chainsData;
+            console.log('TokenService: Raw response text length:', text?.length || 0);
+            if (text) {
+              this.chainsData = JSON.parse(text);
+              console.log('TokenService: Loaded chains from JSON file:', this.chainsData?.length || 0, 'chains');
+              return this.chainsData || FALLBACK_CHAINS;
+            } else {
+              console.warn('TokenService: Empty response text, using fallback');
+              return FALLBACK_CHAINS;
+            }
           } else {
             console.warn('TokenService: JSON file not found, falling back to API');
           }
@@ -130,7 +135,7 @@ export class TokenService {
         }
       } else {
         console.log('TokenService: Using cached chains data');
-        return this.chainsData;
+        return this.chainsData || FALLBACK_CHAINS;
       }
 
       // Fallback to API if JSON file fails
