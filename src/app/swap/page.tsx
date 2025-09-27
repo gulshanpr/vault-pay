@@ -1,11 +1,14 @@
-import React from "react";
-import SwapComponent from "@/components/SwapComponent";
-import DebugSwap from "@/components/DebugSwap";
+"use client";
+
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { SwapInterface } from "@/components/SwapInterface";
 
 export default function SwapPage() {
   return (
-    <div className="space-y-6">
-      <SwapComponent />
-    </div>
+    <DashboardLayout>
+      <div className="p-6">
+        <SwapInterface />
+      </div>
+    </DashboardLayout>
   );
 }
