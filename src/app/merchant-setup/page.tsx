@@ -1,13 +1,19 @@
 "use client";
 
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { MerchantOnboardingForm } from "@/components/MerchantOnboardingForm";
+import { MerchantOnboardingForm, type MerchantFormData } from "@/components/MerchantOnboardingForm";
+import { upsertMerchantProfile } from "@/lib/merchantRepository";
 
 export default function MerchantSetupPage() {
-  const handleMerchantSubmit = (data: any) => {
-    console.log("Merchant registration data:", data);
-    // Here you would typically call a smart contract or API to register the merchant
-    // For now, just log the data
+  const handleMerchantSubmit = async (data: MerchantFormData) => {
+    if (!data.merchantPayout) return;
+
+    await upsertMerchantProfile({
+      merchantWallet: (data as any).merchantWallet || data.merchantPayout,
+      payoutAddress: data.merchantPayout,
+      payoutMode: data.payoutMode,
+      splitBps: data.payoutMode === 2 ? data.splitBps ?? null : null,
+    });
   };
 
   return (

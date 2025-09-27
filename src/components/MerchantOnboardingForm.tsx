@@ -16,10 +16,11 @@ enum PayoutMode {
 }
 
 interface MerchantOnboardingFormProps {
-  onSubmit?: (data: MerchantFormData) => void;
+  onSubmit?: (data: MerchantFormData) => Promise<void> | void;
 }
 
 export interface MerchantFormData {
+  merchantWallet?: string;
   merchantPayout: string;
   payoutMode: PayoutMode;
   splitBps?: number;
@@ -33,6 +34,7 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
   const walletAddress = wallets[0]?.address || "";
 
   const [formData, setFormData] = useState<MerchantFormData>({
+    merchantWallet: "",
     merchantPayout: "",
     payoutMode: PayoutMode.USDC_ONLY,
     splitBps: 5000, // 50% default
@@ -43,6 +45,7 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
     if (walletAddress && ready && authenticated) {
       setFormData(prev => ({
         ...prev,
+        merchantWallet: walletAddress,
         merchantPayout: walletAddress
       }));
     }
@@ -50,6 +53,8 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof MerchantFormData, string>>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof MerchantFormData, string>> = {};
@@ -73,6 +78,9 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setSubmitError(null);
+    setSubmitSuccess(null);
+
     if (!validateForm()) {
       return;
     }
@@ -80,9 +88,15 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
     setIsSubmitting(true);
 
     try {
-      await onSubmit?.(formData);
+      await onSubmit?.({
+        ...formData,
+        merchantWallet: walletAddress || formData.merchantWallet,
+      });
+      setSubmitSuccess("Merchant profile saved.");
     } catch (error) {
       console.error("Error submitting form:", error);
+      const message = error instanceof Error ? error.message : "Failed to save merchant profile.";
+      setSubmitError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -94,6 +108,8 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+    if (submitError) setSubmitError(null);
+    if (submitSuccess) setSubmitSuccess(null);
   };
 
   return (
@@ -209,6 +225,20 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
                 "Register Merchant"
               )}
             </Button>
+
+            {submitError && (
+              <div className="flex items-center gap-2 text-sm text-red-600">
+                <AlertCircle className="w-4 h-4" />
+                {submitError}
+              </div>
+            )}
+
+            {submitSuccess && (
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <CheckCircle className="w-4 h-4" />
+                {submitSuccess}
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>
