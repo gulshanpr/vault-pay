@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     console.log('Fetching from 1inch API...');
     const response = await fetch('https://api.1inch.dev/portfolio/portfolio/v5.0/general/supported_chains', {
       headers: {
-        'Authorization': 'Bearer ZpnUEETQ0EDLZ1KzMErFgFASf1kzU80L',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_DEV_PORTAL_KEY}`,
       },
     });
 
@@ -27,7 +27,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching chains:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch supported chains', details: error.message },
+      { error: 'Failed to fetch supported chains', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
