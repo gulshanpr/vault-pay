@@ -3,15 +3,17 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { LavaLamp } from "@/components/ui/fluid-blob";
+import { GooeyMarquee } from "@/components/ui/gooey-marquee";
 import ConnectWalletButton from '@/components/ConnectWalletButton';
 import {
-  DollarSign,
-  TrendingUp,
   ArrowRight,
   CheckCircle,
   BarChart3,
-  CreditCard,
+  TrendingUp,
+  DollarSign,
   Layers,
+  CreditCard,
 } from "lucide-react";
 
 export default function YieldBackedPaymentsLandingPage() {
@@ -42,6 +44,10 @@ export default function YieldBackedPaymentsLandingPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Fluid Blob Background */}
+        <div className="absolute inset-0 opacity-20">
+          <LavaLamp />
+        </div>
 
         {/* Content */}
         <div className="relative z-10 text-center px-4 max-w-7xl mx-auto">
@@ -300,6 +306,7 @@ export default function YieldBackedPaymentsLandingPage() {
               </ul>
             </div>
           </div>
+
         </div>
 
         {/* Massive Brand Name */}
