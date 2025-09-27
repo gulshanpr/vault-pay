@@ -4,3 +4,6 @@
 [submodule "contracts/lib/metamorpho"]
 	path = contracts/lib/metamorpho
 	url = https://github.com/morpho-org/metamorpho
+[submodule "contracts/lib/euler-interfaces"]
+	path = contracts/lib/euler-interfaces
+	url = https://github.com/euler-xyz/euler-interfaces

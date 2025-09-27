@@ -1,6 +1,6 @@
 [profile.default]
 src = "src"
-evm_version = "paris"
+evm_version = "shanghai"
 ffi = false
 out = "out"
 libs = ["lib"]

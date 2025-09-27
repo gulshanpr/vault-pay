@@ -5,11 +5,10 @@ import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20
 import {SafeERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "../lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {Ownable} from "../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
-import {IMetaMorpho} from "../lib/metamorpho/src/interfaces/IMetaMorpho.sol";
-
+import {IEVault} from "../lib/euler-interfaces/interfaces/IEVault.sol";
 import {MerchantRegistry} from "./MerchantRegistry.sol";
 
-contract VaultAdapter is ReentrancyGuard, Ownable {
+contract EulerVaultAdapter is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     MerchantRegistry public immutable REGISTRY;
@@ -73,7 +72,7 @@ contract VaultAdapter is ReentrancyGuard, Ownable {
             toShares = net;
             token.approve(vault, 0);
             token.approve(vault, toShares);
-            sharesMinted = IMetaMorpho(vault).deposit(toShares, cfg.merchantPayout);
+            sharesMinted = IEVault(vault).deposit(toShares, cfg.merchantPayout);
             require(sharesMinted >= minSharesOut, "slippage shares");
         } else if (cfg.mode == MerchantRegistry.PayoutMode.SPLIT) {
             toShares = (net * cfg.splitBps) / 10_000;
@@ -82,7 +81,7 @@ contract VaultAdapter is ReentrancyGuard, Ownable {
             if (toShares > 0) {
                 token.approve(vault, 0);
                 token.approve(vault, toShares);
-                sharesMinted = IMetaMorpho(vault).deposit(toShares, cfg.merchantPayout);
+                sharesMinted = IEVault(vault).deposit(toShares, cfg.merchantPayout);
                 require(sharesMinted >= minSharesOut, "slippage shares");
             }
             if (toCash > 0) {
@@ -104,16 +103,17 @@ contract VaultAdapter is ReentrancyGuard, Ownable {
         require(shares > 0, "zero shares");
 
         // Transfer shares from caller to this contract
-        IMetaMorpho vaultContract = IMetaMorpho(vault);
+        IEVault vaultContract = IEVault(vault);
         IERC20(vault).safeTransferFrom(msg.sender, address(this), shares);
 
-        // Redeem shares for underlying assets
+        // Redeem shares for underlying assets using Euler's interface
         assetsReceived = vaultContract.redeem(shares, recipient, address(this));
         require(assetsReceived >= minAssetsOut, "slippage assets");
 
         emit Redeemed(msg.sender, vault, shares, assetsReceived, recipient);
     }
 
+    // === Withdraw Functions ===
     function withdrawAssets(address vault, uint256 assets, address recipient, uint256 maxSharesIn)
         external
         nonReentrant
@@ -123,7 +123,7 @@ contract VaultAdapter is ReentrancyGuard, Ownable {
         require(recipient != address(0), "zero recipient");
         require(assets > 0, "zero assets");
 
-        IMetaMorpho vaultContract = IMetaMorpho(vault);
+        IEVault vaultContract = IEVault(vault);
 
         // Preview how many shares will be needed
         uint256 sharesToBurn = vaultContract.previewWithdraw(assets);
@@ -132,7 +132,7 @@ contract VaultAdapter is ReentrancyGuard, Ownable {
         // Transfer shares from caller to this contract
         IERC20(vault).safeTransferFrom(msg.sender, address(this), sharesToBurn);
 
-        // Withdraw assets by burning shares
+        // Withdraw assets by burning shares using Euler's interface
         sharesBurned = vaultContract.withdraw(assets, recipient, address(this));
 
         emit Redeemed(msg.sender, vault, sharesBurned, assets, recipient);
@@ -146,14 +146,14 @@ contract VaultAdapter is ReentrancyGuard, Ownable {
         require(allowedVaults[vault], "vault not allowed");
         require(recipient != address(0), "zero recipient");
 
-        IMetaMorpho vaultContract = IMetaMorpho(vault);
+        IEVault vaultContract = IEVault(vault);
         uint256 userShares = vaultContract.balanceOf(user);
         require(userShares > 0, "no shares to redeem");
 
         // Transfer all shares from user to this contract
         IERC20(vault).safeTransferFrom(user, address(this), userShares);
 
-        // Redeem all shares for underlying assets
+        // Redeem all shares for underlying assets using Euler's interface
         assetsReceived = vaultContract.redeem(userShares, recipient, address(this));
         require(assetsReceived >= minAssetsOut, "slippage assets");
 
@@ -161,20 +161,24 @@ contract VaultAdapter is ReentrancyGuard, Ownable {
     }
 
     // === View Functions for Redeem ===
-
     function previewRedeem(address vault, uint256 shares) external view returns (uint256 assets) {
         require(allowedVaults[vault], "vault not allowed");
-        return IMetaMorpho(vault).previewRedeem(shares);
+        return IEVault(vault).previewRedeem(shares);
     }
 
     function previewWithdraw(address vault, uint256 assets) external view returns (uint256 shares) {
         require(allowedVaults[vault], "vault not allowed");
-        return IMetaMorpho(vault).previewWithdraw(assets);
+        return IEVault(vault).previewWithdraw(assets);
+    }
+
+    function previewDeposit(address vault, uint256 assets) external view returns (uint256 shares) {
+        require(allowedVaults[vault], "vault not allowed");
+        return IEVault(vault).previewDeposit(assets);
     }
 
     function getVaultAsset(address vault) external view returns (address asset) {
         require(allowedVaults[vault], "vault not allowed");
-        return IMetaMorpho(vault).asset();
+        return IEVault(vault).asset();
     }
 
     // === Owner functions ===
