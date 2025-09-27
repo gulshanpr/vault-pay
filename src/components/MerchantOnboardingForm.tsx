@@ -30,8 +30,8 @@ import {
 } from "wagmi";
 import {
   merchantRegistry,
-  merchantRegistryAddress,
   protocolFeeAddress,
+  getContractAddress,
 } from "@/config/abi";
 
 enum PayoutMode {
@@ -85,8 +85,8 @@ export function MerchantOnboardingForm({
   const currentChainId = useChainId();
   const { switchChain } = useSwitchChain();
 
-  // Get connected wallet address
-  const walletAddress = wallets[0]?.address || connectedAddress || "";
+  // Get connected wallet address - prioritize Wagmi's connected address
+  const walletAddress = connectedAddress || wallets[0]?.address || "";
 
   const [formData, setFormData] = useState<MerchantFormData>({
     merchantWallet: "",
@@ -248,10 +248,16 @@ export function MerchantOnboardingForm({
     try {
       // Call the onSubmit prop if provided
       await onSubmit?.(formData);
-      
+
+      // Get the correct contract address for the selected chain
+      const merchantRegistryAddress = getContractAddress(
+        formData.payoutChainId,
+        "MERCHANT_REGISTRY"
+      );
+
       // Execute the smart contract call
       writeContract({
-        address: merchantRegistryAddress,
+        address: merchantRegistryAddress as `0x${string}`,
         abi: merchantRegistry,
         functionName: "registerMerchant",
         args: [

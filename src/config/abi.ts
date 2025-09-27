@@ -1,3 +1,38 @@
+import { SUPPORTED_CHAINS } from "@/utils/vaultConfig";
+
+// Contract addresses by chain
+export const CONTRACT_ADDRESSES = {
+  [SUPPORTED_CHAINS.BASE]: {
+    MERCHANT_REGISTRY: "0x3B284DDcf13fbac389646C888C3dc669c00914Be",
+    VAULT_ADAPTER: "0x92d7074d3ae478f91d136a018fe8Fa8Ea53f0D17",
+    EULER_VAULT_ADAPTER: "0xCFE7F11016055a00a3fD0dCA0D642E9538cDC490",
+  },
+  [SUPPORTED_CHAINS.ARBITRUM]: {
+    MERCHANT_REGISTRY: "0x08aC0DE71fb42A9119E7e4c7105d0740901af369",
+    VAULT_ADAPTER: "0x18080a79BdF5F9eCf48E107A349bC889e10EB467",
+    EULER_VAULT_ADAPTER: "0xb087bC0E1bFd5E97747Cb8B4CD2079FdEDf05537",
+  },
+  [SUPPORTED_CHAINS.UNICHAIN]: {
+    MERCHANT_REGISTRY: "0x3B284DDcf13fbac389646C888C3dc669c00914Be",
+    VAULT_ADAPTER: "0x92d7074d3ae478f91d136a018fe8Fa8Ea53f0D17",
+    EULER_VAULT_ADAPTER: "0xCFE7F11016055a00a3fD0dCA0D642E9538cDC490",
+  },
+} as const;
+
+// Helper function to get contract address for a specific chain
+export const getContractAddress = (
+  chainId: number,
+  contractName: keyof (typeof CONTRACT_ADDRESSES)[keyof typeof CONTRACT_ADDRESSES]
+): string => {
+  const chainAddresses =
+    CONTRACT_ADDRESSES[chainId as keyof typeof CONTRACT_ADDRESSES];
+  if (!chainAddresses) {
+    throw new Error(`Unsupported chain ID: ${chainId}`);
+  }
+  return chainAddresses[contractName];
+};
+
+// Legacy exports for backward compatibility
 export const merchantRegistryAddress =
   "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
