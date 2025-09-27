@@ -5,4 +5,15 @@ ffi = false
 out = "out"
 libs = ["lib"]
 
+# Network configurations
+[rpc_endpoints]
+base = "https://base-mainnet.g.alchemy.com/v2/"
+arbitrum = "https://arb-mainnet.g.alchemy.com/v2/"  # Fixed: was using base URL
+unichain = "https://unichain-mainnet.g.alchemy.com/v2/"
+
+[etherscan]
+base = { key = "${BASESCAN_API_KEY}", url = "https://api.basescan.org/api" }
+arbitrum = { key = "${ARBISCAN_API_KEY}", url = "https://api.arbiscan.io/api" }
+unichain = { key = "${UNICHAIN_API_KEY}", url = "https://api.uniscan.xyz/api" }
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
