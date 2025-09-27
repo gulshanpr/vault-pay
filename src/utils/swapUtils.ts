@@ -2,6 +2,7 @@ import { SDK, HashLock, NetworkEnum } from "@1inch/cross-chain-sdk";
 import { randomBytes } from 'crypto';
 import { solidityPackedKeccak256 } from 'ethers';
 import Web3 from "web3";
+import { getENSName, resolveENSName } from '@/lib/ens';
 
 // Utility function to generate random bytes32
 export function getRandomBytes32(): string {
@@ -120,4 +121,53 @@ export function createSDKWithWagmi(
         authKey: devPortalApiKey,
         blockchainProvider: blockchainProvider as any
     });
+}
+
+// ENS utility functions for swap operations
+export async function resolveRecipientAddress(recipientInput: string): Promise<string> {
+    /**
+     * Resolve recipient address - handles both ENS names and regular addresses
+     * @param recipientInput - Either an ENS name (e.g., "vitalik.eth") or wallet address
+     * @returns resolved wallet address
+     */
+    
+    // Check if input looks like an ENS name
+    if (recipientInput.endsWith('.eth')) {
+        try {
+            const resolvedAddress = await resolveENSName(recipientInput);
+            if (resolvedAddress) {
+                console.log(`✅ Resolved ${recipientInput} → ${resolvedAddress}`);
+                return resolvedAddress;
+            } else {
+                throw new Error(`ENS name ${recipientInput} could not be resolved`);
+            }
+        } catch (error) {
+            console.error('ENS resolution failed:', error);
+            throw new Error(`Failed to resolve ENS name: ${recipientInput}`);
+        }
+    }
+    
+    // Return as-is if it's already an address
+    return recipientInput;
+}
+
+export async function getDisplayNameForAddress(address: string): Promise<string> {
+    /**
+     * Get display name for an address - returns ENS name if available, otherwise formatted address
+     * @param address - Wallet address
+     * @returns ENS name or formatted address
+     */
+    
+    try {
+        const ensName = await getENSName(address);
+        if (ensName) {
+            console.log(`✅ Found ENS name for ${address}: ${ensName}`);
+            return ensName;
+        }
+    } catch (error) {
+        console.error('ENS lookup failed:', error);
+    }
+    
+    // Return formatted address if no ENS
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }

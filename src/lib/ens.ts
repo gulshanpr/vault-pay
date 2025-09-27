@@ -1,10 +1,10 @@
 import { createPublicClient, http, isAddress } from 'viem';
 import { mainnet } from 'viem/chains';
 
-// Create a public client for ENS resolution
+// Create a public client for ENS resolution with fallback RPC
 const publicClient = createPublicClient({
   chain: mainnet,
-  transport: http()
+  transport: http('https://eth.llamarpc.com') // Free RPC endpoint
 });
 
 export interface ENSResult {

@@ -45,9 +45,10 @@ function getFallbackTokensForChain(chainId: number): Record<string, any> {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { chainId: string } }
+  context: { params: Promise<{ chainId: string }> }
 ) {
   try {
+    const params = await context.params;
     const chainId = params.chainId;
 
     console.log(`API Route: Fetching tokens for chain ${chainId}`);
@@ -61,7 +62,7 @@ export async function GET(
 
     const response = await fetch(`https://api.1inch.dev/portfolio/portfolio/v5.0/general/tokens/${chainId}`, {
       headers: {
-        'Authorization': 'Bearer ZpnUEETQ0EDLZ1KzMErFgFASf1kzU80L',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_DEV_PORTAL_KEY}`,
       },
     });
 
@@ -71,7 +72,7 @@ export async function GET(
     if (response.status === 404) {
       console.warn(`API Route: Tokens endpoint not found for chain ${chainId}, returning fallback data`);
       // Return fallback tokens data
-      const fallbackTokens = getFallbackTokensForChain(chainId);
+      const fallbackTokens = getFallbackTokensForChain(parseInt(chainId));
       return NextResponse.json(fallbackTokens);
     }
 
@@ -87,9 +88,10 @@ export async function GET(
 
     return NextResponse.json(data);
   } catch (error) {
+    const params = await context.params;
     console.error(`Error fetching tokens for chain ${params.chainId}:`, error);
     return NextResponse.json(
-      { error: `Failed to fetch tokens for chain ${params.chainId}`, details: error.message },
+      { error: `Failed to fetch tokens for chain ${params.chainId}`, details: error instanceof Error ? error.message : String(error)  },
       { status: 500 }
     );
   }
