@@ -29,9 +29,6 @@ const navigation = [
   { name: "Merchant Setup", href: "/merchant-setup", icon: Building2 },
   { name: "Swap", href: "/swap", icon: ArrowLeftRight },
   { name: "Vault Router", href: "/vault-router", icon: ArrowRightLeft },
-  { name: "Wallet", href: "/wallet", icon: Wallet },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar({ className }: SidebarProps) {
@@ -93,15 +90,6 @@ export function Sidebar({ className }: SidebarProps) {
           );
         })}
       </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-        {!collapsed && (
-          <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
-            © 2025 Vault-Pay
-          </div>
-        )}
-      </div>
     </div>
   );
 }
