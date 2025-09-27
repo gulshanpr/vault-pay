@@ -161,7 +161,7 @@ export default function YieldBackedPaymentsLandingPage() {
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Yield Offsets Fees</h3>
                     <p className="text-slate-600 dark:text-slate-300">Protocol, bridge, and gas fees are covered by vault yield, making payments cheaper than traditional rails</p>
                   </div>
-            </div>
+                </div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-blue-200 dark:border-blue-800 hover:shadow-blue-200/50 transition-all duration-300">
@@ -173,7 +173,7 @@ export default function YieldBackedPaymentsLandingPage() {
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Transferable Vault Shares</h3>
                     <p className="text-slate-600 dark:text-slate-300">Directly transfer yield-earning vault shares to suppliers, employees, or partners as ERC-20 receipts</p>
                   </div>
-            </div>
+                </div>
               </div>
             </div>
 
@@ -199,7 +199,7 @@ export default function YieldBackedPaymentsLandingPage() {
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Split Payments</h3>
                     <p className="text-slate-600 dark:text-slate-300">Receive part in immediate USDC liquidity and part in yield-earning vault shares for optimal cash flow</p>
                   </div>
-            </div>
+                </div>
               </div>
 
             </div>

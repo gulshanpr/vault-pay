@@ -2,6 +2,7 @@
 
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Wallet, LogOut, Loader2 } from "lucide-react";
 
@@ -9,6 +10,9 @@ export default function ConnectWalletButton() {
   const { ready, authenticated, login, logout } = usePrivy();
   const { wallets } = useWallets();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Check if wallet is connected
   const isWalletConnected = authenticated && wallets.length > 0 && wallets[0]?.address;
@@ -27,6 +31,21 @@ export default function ConnectWalletButton() {
       setIsConnecting(false);
     }
   };
+
+  // Only redirect to dashboard when wallet is first connected from landing page
+  useEffect(() => {
+    if (isWalletConnected && ready && authenticated && !hasRedirected && pathname === "/") {
+      setHasRedirected(true);
+      router.push("/dashboard");
+    }
+  }, [isWalletConnected, ready, authenticated, hasRedirected, pathname, router]);
+
+  // Reset redirect flag when wallet disconnects
+  useEffect(() => {
+    if (!isWalletConnected) {
+      setHasRedirected(false);
+    }
+  }, [isWalletConnected]);
 
   // Get user wallet address for display
   const walletAddress = wallets[0]?.address;
