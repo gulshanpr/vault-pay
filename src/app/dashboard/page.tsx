@@ -17,7 +17,6 @@ export default function DashboardHomePage() {
           <div className="mb-8">
             <ConnectedWalletDisplay />
           </div>
-
           {/* ENS Domain Setup */}
           <div className="mb-8">
             <ENSCard onENSUpdate={(ensData) => {
@@ -55,31 +54,21 @@ export default function DashboardHomePage() {
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                🚀 Get Started
-              </h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🚀 Get Started</h3>
               <p className="text-slate-600 dark:text-slate-300 mb-4">
                 Set up your merchant configuration to start receiving yield-bearing payments
               </p>
-              <a
-                href="/merchant-setup"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              >
+              <a href="/merchant-setup" className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
                 Setup Merchant
               </a>
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                🔄 Swap Tokens
-              </h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">🔄 Swap Tokens</h3>
               <p className="text-slate-600 dark:text-slate-300 mb-4">
                 Use the 1inch integration to swap tokens across chains
               </p>
-              <a
-                href="/swap"
-                className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-              >
+              <a href="/swap" className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
                 Open Swap
               </a>
             </div>
