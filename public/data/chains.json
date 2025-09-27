@@ -1,0 +1,122 @@
+[
+  {
+    "chain_id": 1,
+    "chain_name": "Ethereum",
+    "chain_icon": "https://assets.coingecko.com/coins/images/279/small/ethereum.png",
+    "native_token": {
+      "chain": 1,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "ETH",
+      "name": "Ethereum"
+    }
+  },
+  {
+    "chain_id": 137,
+    "chain_name": "Polygon",
+    "chain_icon": "https://assets.coingecko.com/coins/images/4713/small/matic-token-icon.png",
+    "native_token": {
+      "chain": 137,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "MATIC",
+      "name": "Polygon"
+    }
+  },
+  {
+    "chain_id": 42161,
+    "chain_name": "Arbitrum One",
+    "chain_icon": "https://assets.coingecko.com/coins/images/16547/small/arbitrum.png",
+    "native_token": {
+      "chain": 42161,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "ETH",
+      "name": "Ethereum"
+    }
+  },
+  {
+    "chain_id": 10,
+    "chain_name": "Optimism",
+    "chain_icon": "https://assets.coingecko.com/coins/images/25244/small/optimism.png",
+    "native_token": {
+      "chain": 10,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "ETH",
+      "name": "Ethereum"
+    }
+  },
+  {
+    "chain_id": 43114,
+    "chain_name": "Avalanche C-Chain",
+    "chain_icon": "https://assets.coingecko.com/coins/images/12559/small/coin-round-red.png",
+    "native_token": {
+      "chain": 43114,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "AVAX",
+      "name": "Avalanche"
+    }
+  },
+  {
+    "chain_id": 56,
+    "chain_name": "BNB Smart Chain",
+    "chain_icon": "https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png",
+    "native_token": {
+      "chain": 56,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "BNB",
+      "name": "BNB"
+    }
+  },
+  {
+    "chain_id": 250,
+    "chain_name": "Fantom",
+    "chain_icon": "https://assets.coingecko.com/coins/images/4001/small/Fantom.png",
+    "native_token": {
+      "chain": 250,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "FTM",
+      "name": "Fantom"
+    }
+  },
+  {
+    "chain_id": 59144,
+    "chain_name": "Linea",
+    "chain_icon": "https://app.1inch.io/assets/images/network-logos/linea.svg",
+    "native_token": {
+      "chain": 59144,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "ETH",
+      "name": "Ethereum"
+    }
+  },
+  {
+    "chain_id": 8453,
+    "chain_name": "Base",
+    "chain_icon": "https://assets.coingecko.com/coins/images/28553/small/BASE.png",
+    "native_token": {
+      "chain": 8453,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "ETH",
+      "name": "Ethereum"
+    }
+  },
+  {
+    "chain_id": 324,
+    "chain_name": "zkSync Era",
+    "chain_icon": "https://assets.coingecko.com/coins/images/30103/small/zksync_era.png",
+    "native_token": {
+      "chain": 324,
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 18,
+      "symbol": "ETH",
+      "name": "Ethereum"
+    }
+  }
+]
