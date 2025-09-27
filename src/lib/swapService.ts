@@ -44,7 +44,8 @@ export class SwapService {
       }
 
       this.web3Instance = new Web3(nodeUrl);
-      const blockchainProvider = new PrivateKeyProviderConnector(makerPrivateKey, this.web3Instance);
+      // Fix: Pass only the provider, not the full Web3 instance, to PrivateKeyProviderConnector
+      const blockchainProvider = new PrivateKeyProviderConnector(makerPrivateKey, this.web3Instance.currentProvider as any);
 
       this.sdk = new SDK({
         url: 'https://api.1inch.dev/fusion-plus',
@@ -63,8 +64,8 @@ export class SwapService {
 
     try {
       const quote = await this.sdk.getQuote({
-        srcChainId: params.srcChainId,
-        dstChainId: params.dstChainId,
+        srcChainId: Number(params.srcChainId),
+        dstChainId: Number(params.dstChainId),
         srcTokenAddress: params.srcTokenAddress,
         dstTokenAddress: params.dstTokenAddress,
         amount: params.amount,
@@ -94,7 +95,7 @@ export class SwapService {
         : HashLock.forMultipleFills(
             secretHashes.map((secretHash, i) =>
               solidityPackedKeccak256(['uint64', 'bytes32'], [i, secretHash.toString()])
-            )
+            ) as any
           );
 
       const quoteResponse = await this.sdk.placeOrder(quote, {
