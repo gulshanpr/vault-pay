@@ -3,7 +3,9 @@ import { mainnet, polygon, arbitrum, optimism, baseSepolia, base } from 'viem/ch
 
 export const privyConfig: PrivyClientConfig = {
   embeddedWallets: {
-    createOnLogin: 'all-users',
+    ethereum: {
+      createOnLogin: 'all-users',
+    },
     showWalletUIs: true,
   },
   supportedChains: [mainnet, polygon, arbitrum, optimism, base, baseSepolia],
@@ -14,6 +16,6 @@ export const privyConfig: PrivyClientConfig = {
   appearance: {
     theme: 'light',
     accentColor: '#2563eb',
-    walletList: ['metamask', 'coinbase-wallet', 'rainbow', 'walletconnect'],
-  },
+    walletList: ['metamask', 'coinbase_wallet', 'rainbow', 'wallet_connect'],
+  }
 };
