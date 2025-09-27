@@ -335,9 +335,9 @@ export default function YieldBackedPaymentsLandingPage() {
 
           <div className="border-t border-slate-800 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="text-4xl font-bold mb-4 md:mb-0">YieldBacked</div>
+              <div className="text-4xl font-bold mb-4 md:mb-0">Vault-Pay</div>
               <div className="text-slate-400 text-sm">
-                © 2025 YieldBacked. Payments that earn yield, not idle capital.
+                © 2025 Vault-Pay. Payments that earn yield, not idle capital.
               </div>
             </div>
           </div>
@@ -346,7 +346,7 @@ export default function YieldBackedPaymentsLandingPage() {
         {/* Massive Brand Name */}
         <div className="relative flex items-center justify-center min-h-[30vh] px-4">
           <h2 className="text-[clamp(8rem,17vw,25rem)] font-black bg-gradient-to-r from-blue-400 via-blue-300 to-blue-400 bg-clip-text text-transparent leading-none tracking-tighter select-none">
-            YieldBacked
+            Vault-Pay
           </h2>
         </div>
       </footer>
