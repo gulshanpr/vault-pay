@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:sdk": "node src/sdk/test-runner.js",
+    "sdk:example": "node src/sdk/example.js",
+    "sdk:validate": "node src/sdk/validate.js"
   },
   "dependencies": {
     "@1inch/cross-chain-sdk": "^1.0.2",
