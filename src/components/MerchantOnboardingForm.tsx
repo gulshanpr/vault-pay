@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2, Wallet } from "lucide-react";
 
 enum PayoutMode {
   USDC_ONLY = 0,
@@ -20,22 +21,32 @@ interface MerchantOnboardingFormProps {
 
 export interface MerchantFormData {
   merchantPayout: string;
-  payoutToken: string;
   payoutMode: PayoutMode;
   splitBps?: number;
-  protocolFeeBps: number;
-  feeRecipient: string;
 }
 
 export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps) {
+  const { ready, authenticated } = usePrivy();
+  const { wallets } = useWallets();
+
+  // Get connected wallet address
+  const walletAddress = wallets[0]?.address || "";
+
   const [formData, setFormData] = useState<MerchantFormData>({
     merchantPayout: "",
-    payoutToken: "",
     payoutMode: PayoutMode.USDC_ONLY,
     splitBps: 5000, // 50% default
-    protocolFeeBps: 100, // 1% default
-    feeRecipient: "",
   });
+
+  // Initialize merchantPayout with connected wallet address
+  useEffect(() => {
+    if (walletAddress && ready && authenticated) {
+      setFormData(prev => ({
+        ...prev,
+        merchantPayout: walletAddress
+      }));
+    }
+  }, [walletAddress, ready, authenticated]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof MerchantFormData, string>>>({});
@@ -49,26 +60,10 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
       newErrors.merchantPayout = "Invalid Ethereum address";
     }
 
-    if (!formData.payoutToken) {
-      newErrors.payoutToken = "Payout token address is required";
-    } else if (!/^0x[a-fA-F0-9]{40}$/.test(formData.payoutToken)) {
-      newErrors.payoutToken = "Invalid Ethereum address";
-    }
-
     if (formData.payoutMode === PayoutMode.SPLIT) {
       if (!formData.splitBps || formData.splitBps < 0 || formData.splitBps > 10000) {
         newErrors.splitBps = "Split percentage must be between 0 and 10000 (basis points)";
       }
-    }
-
-    if (!formData.feeRecipient) {
-      newErrors.feeRecipient = "Fee recipient address is required";
-    } else if (!/^0x[a-fA-F0-9]{40}$/.test(formData.feeRecipient)) {
-      newErrors.feeRecipient = "Invalid Ethereum address";
-    }
-
-    if (formData.protocolFeeBps < 0 || formData.protocolFeeBps > 1000) {
-      newErrors.protocolFeeBps = "Protocol fee must be between 0 and 1000 (basis points)";
     }
 
     setErrors(newErrors);
@@ -117,38 +112,35 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Merchant Payout Address */}
             <div className="space-y-2">
-              <Label htmlFor="merchantPayout">Merchant Payout Address</Label>
-              <Input
-                id="merchantPayout"
-                type="text"
-                placeholder="0x..."
-                value={formData.merchantPayout}
-                onChange={(e) => handleInputChange("merchantPayout", e.target.value)}
-                className={errors.merchantPayout ? "border-red-500" : ""}
-              />
+              <div className="flex items-center gap-2">
+                <Label htmlFor="merchantPayout">Merchant Payout Address</Label>
+                {walletAddress && (
+                  <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                    <Wallet className="w-3 h-3" />
+                    Connected Wallet
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  id="merchantPayout"
+                  type="text"
+                  placeholder={walletAddress ? "Using connected wallet address" : "0x..."}
+                  value={formData.merchantPayout}
+                  onChange={(e) => handleInputChange("merchantPayout", e.target.value)}
+                  className={`${errors.merchantPayout ? "border-red-500" : ""} ${walletAddress ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : ""}`}
+                  readOnly={!!walletAddress}
+                />
+              </div>
               {errors.merchantPayout && (
                 <div className="flex items-center gap-2 text-sm text-red-600">
                   <AlertCircle className="w-4 h-4" />
                   {errors.merchantPayout}
                 </div>
               )}
-            </div>
-
-            {/* Payout Token Address */}
-            <div className="space-y-2">
-              <Label htmlFor="payoutToken">Payout Token Address</Label>
-              <Input
-                id="payoutToken"
-                type="text"
-                placeholder="0x..."
-                value={formData.payoutToken}
-                onChange={(e) => handleInputChange("payoutToken", e.target.value)}
-                className={errors.payoutToken ? "border-red-500" : ""}
-              />
-              {errors.payoutToken && (
-                <div className="flex items-center gap-2 text-sm text-red-600">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.payoutToken}
+              {!walletAddress && (
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Connect your wallet to auto-populate this field
                 </div>
               )}
             </div>
@@ -201,48 +193,6 @@ export function MerchantOnboardingForm({ onSubmit }: MerchantOnboardingFormProps
                 </div>
               </div>
             )}
-
-            {/* Protocol Fee */}
-            <div className="space-y-2">
-              <Label htmlFor="protocolFeeBps">Protocol Fee (BPS)</Label>
-              <Input
-                id="protocolFeeBps"
-                type="number"
-                min="0"
-                max="1000"
-                value={formData.protocolFeeBps}
-                onChange={(e) => handleInputChange("protocolFeeBps", parseInt(e.target.value))}
-                className={errors.protocolFeeBps ? "border-red-500" : ""}
-              />
-              {errors.protocolFeeBps && (
-                <div className="flex items-center gap-2 text-sm text-red-600">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.protocolFeeBps}
-                </div>
-              )}
-              <div className="text-sm text-slate-600">
-                {formData.protocolFeeBps}/10000 = {((formData.protocolFeeBps || 0) / 100)}% protocol fee
-              </div>
-            </div>
-
-            {/* Fee Recipient */}
-            <div className="space-y-2">
-              <Label htmlFor="feeRecipient">Fee Recipient Address</Label>
-              <Input
-                id="feeRecipient"
-                type="text"
-                placeholder="0x..."
-                value={formData.feeRecipient}
-                onChange={(e) => handleInputChange("feeRecipient", e.target.value)}
-                className={errors.feeRecipient ? "border-red-500" : ""}
-              />
-              {errors.feeRecipient && (
-                <div className="flex items-center gap-2 text-sm text-red-600">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.feeRecipient}
-                </div>
-              )}
-            </div>
 
             {/* Submit Button */}
             <Button
