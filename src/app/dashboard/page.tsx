@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { ENSCard } from "@/components/ENSCard";
 
 export default function DashboardHomePage() {
   return (
@@ -31,6 +32,14 @@ export default function DashboardHomePage() {
               <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-2">0%</div>
               <div className="text-slate-600 dark:text-slate-300">Yield Earned</div>
             </div>
+          </div>
+
+          {/* ENS Domain Setup */}
+          <div className="mb-8">
+            <ENSCard onENSUpdate={(ensData) => {
+              console.log('ENS updated:', ensData);
+              // You can handle ENS updates here - save to merchant registry, etc.
+            }} />
           </div>
 
           {/* Quick Actions */}
