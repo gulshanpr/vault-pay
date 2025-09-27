@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "YieldBacked - Omnichain Merchant Payments",
+  title: " Vault-Pay - Omnichain Merchant Payments",
   description: "The first omnichain merchant payment system where settlements come as yield-bearing vault shares, not idle stablecoins.",
 };
 
