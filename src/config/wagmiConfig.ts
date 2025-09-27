@@ -1,9 +1,9 @@
 import { createConfig } from '@privy-io/wagmi';
 import { http } from 'wagmi';
-import { mainnet, polygon, arbitrum, optimism, baseSepolia, base } from 'viem/chains';
+import { mainnet, polygon, arbitrum, optimism, baseSepolia, base, unichain } from 'viem/chains';
 
 export const wagmiConfig = createConfig({
-  chains: [mainnet, polygon, arbitrum, optimism, base, baseSepolia],
+  chains: [mainnet, polygon, arbitrum, optimism, base, baseSepolia, unichain],
   transports: {
     [mainnet.id]: http(),
     [polygon.id]: http(),
@@ -11,5 +11,6 @@ export const wagmiConfig = createConfig({
     [optimism.id]: http(),
     [base.id]: http(),
     [baseSepolia.id]: http(),
+    [unichain.id]: http(),
   },
 });
