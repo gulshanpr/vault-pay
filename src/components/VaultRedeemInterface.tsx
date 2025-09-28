@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAccount, useWalletClient, usePublicClient, useChainId } from "wagmi";
+import {
+  useAccount,
+  useWalletClient,
+  usePublicClient,
+  useChainId,
+  useSwitchChain,
+} from "wagmi";
 import { usePrivy } from "@privy-io/react-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,12 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2,
   AlertCircle,
@@ -34,6 +35,7 @@ import {
   Send,
   DollarSign,
   Info,
+  RefreshCw,
 } from "lucide-react";
 import { formatUnits, parseUnits } from "viem";
 import { CONTRACT_ADDRESSES, getContractAddress } from "@/config/abi";
@@ -62,8 +64,14 @@ interface RedeemAction {
 
 const CHAIN_NAMES = {
   [SUPPORTED_CHAINS.BASE]: "Base",
-  [SUPPORTED_CHAINS.ARBITRUM]: "Arbitrum", 
+  [SUPPORTED_CHAINS.ARBITRUM]: "Arbitrum",
   [SUPPORTED_CHAINS.UNICHAIN]: "Unichain",
+};
+
+const CHAIN_KEY_TO_ID = {
+  BASE: SUPPORTED_CHAINS.BASE,
+  ARBITRUM: SUPPORTED_CHAINS.ARBITRUM,
+  UNICHAIN: SUPPORTED_CHAINS.UNICHAIN,
 };
 
 function formatUSD(value?: string | null, digits = 2) {
@@ -86,16 +94,21 @@ export function VaultRedeemInterface() {
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
   const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const { user } = usePrivy();
 
   // State
-  const [selectedChain, setSelectedChain] = useState<keyof typeof SUPPORTED_CHAINS>("ARBITRUM");
+  const [selectedChain, setSelectedChain] =
+    useState<keyof typeof SUPPORTED_CHAINS>("ARBITRUM");
   const [positions, setPositions] = useState<Position[]>([]);
-  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<Position | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [txLoading, setTxLoading] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [chainSwitching, setChainSwitching] = useState(false);
 
   // Form state
   const [redeemAction, setRedeemAction] = useState<RedeemAction>({
@@ -107,6 +120,56 @@ export function VaultRedeemInterface() {
 
   const userAddress = address || user?.wallet?.address || "";
   const currentChainId = SUPPORTED_CHAINS[selectedChain];
+  const isOnCorrectChain = chainId === currentChainId;
+
+  // Handle chain selection and automatic switching
+  const handleChainSelect = async (value: string) => {
+    const newChain = value as keyof typeof SUPPORTED_CHAINS;
+    const newChainId = CHAIN_KEY_TO_ID[newChain];
+
+    setSelectedChain(newChain);
+    setError(null);
+
+    // If wallet is connected and we're on a different chain, switch automatically
+    if (userAddress && chainId && chainId !== newChainId) {
+      setChainSwitching(true);
+      try {
+        await switchChain({ chainId: newChainId });
+        console.log(`Successfully switched to ${CHAIN_NAMES[newChainId]}`);
+      } catch (err: any) {
+        console.error("Chain switch failed:", err);
+        setError(
+          `Failed to switch to ${CHAIN_NAMES[newChainId]}: ${
+            err.message || "Unknown error"
+          }`
+        );
+      } finally {
+        setChainSwitching(false);
+      }
+    }
+  };
+
+  // Manual chain switch function
+  const handleManualChainSwitch = async () => {
+    if (!userAddress || !currentChainId) return;
+
+    setChainSwitching(true);
+    setError(null);
+
+    try {
+      await switchChain({ chainId: currentChainId });
+      console.log(`Successfully switched to ${CHAIN_NAMES[currentChainId]}`);
+    } catch (err: any) {
+      console.error("Manual chain switch failed:", err);
+      setError(
+        `Failed to switch to ${CHAIN_NAMES[currentChainId]}: ${
+          err.message || "Unknown error"
+        }`
+      );
+    } finally {
+      setChainSwitching(false);
+    }
+  };
 
   // Load user positions
   useEffect(() => {
@@ -117,7 +180,10 @@ export function VaultRedeemInterface() {
       setError(null);
       try {
         const chainName = selectedChain.toLowerCase();
-        const url = new URL("/api/morpho/user-positions", window.location.origin);
+        const url = new URL(
+          "/api/morpho/user-positions",
+          window.location.origin
+        );
         url.searchParams.set("chain", chainName);
         url.searchParams.set("user", userAddress);
 
@@ -153,13 +219,12 @@ export function VaultRedeemInterface() {
       minOut: "",
     });
     setTxHash(null);
-    setError(null);
   }, [selectedPosition, userAddress]);
 
   const handleMaxAmount = () => {
     if (selectedPosition) {
       const formattedShares = formatShares(selectedPosition.shares);
-      setRedeemAction(prev => ({ ...prev, amount: formattedShares }));
+      setRedeemAction((prev) => ({ ...prev, amount: formattedShares }));
     }
   };
 
@@ -181,23 +246,24 @@ export function VaultRedeemInterface() {
       return;
     }
 
+    // Check if on correct chain
+    if (!isOnCorrectChain) {
+      setError(`Please switch to ${CHAIN_NAMES[currentChainId]} network first`);
+      return;
+    }
+
     setTxLoading(true);
     setError(null);
     setTxHash(null);
 
     try {
-      // Switch to correct chain if needed
-      if (chainId !== currentChainId) {
-        // You might want to add chain switching logic here
-        throw new Error(`Please switch to ${CHAIN_NAMES[currentChainId]} network`);
-      }
-
       const sharesAmount = parseUnits(redeemAction.amount, 18).toString();
       const recipient = (redeemAction.recipient || userAddress) as `0x${string}`;
       const minOut = redeemAction.minOut ? parseUnits(redeemAction.minOut, 18).toString() : "0";
 
       // Determine if this is an Euler vault (you might need to adjust this logic)
-      const isEulerVault = selectedPosition.vault.name?.toLowerCase().includes("euler") || false;
+      const isEulerVault =
+        selectedPosition.vault.name?.toLowerCase().includes("euler") || false;
       const contractAddress = getContractForChain(currentChainId, isEulerVault);
 
       let hash: string;
@@ -220,7 +286,9 @@ export function VaultRedeemInterface() {
       } else if (redeemAction.type === "withdraw") {
         // Withdraw specific amount of assets
         const assetsAmount = parseUnits(redeemAction.amount, 18).toString();
-        const maxSharesIn = redeemAction.minOut ? parseUnits(redeemAction.minOut, 18).toString() : sharesAmount;
+        const maxSharesIn = redeemAction.minOut
+          ? parseUnits(redeemAction.minOut, 18).toString()
+          : sharesAmount;
 
         hash = await walletClient.writeContract({
           address: contractAddress as `0x${string}`,
@@ -251,14 +319,13 @@ export function VaultRedeemInterface() {
 
       // Wait for transaction confirmation
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      
+
       if (receipt.status === "success") {
         // Reload positions after successful transaction
         setTimeout(() => {
           window.location.reload(); // Simple reload, you could implement a more sophisticated refresh
         }, 2000);
       }
-
     } catch (err: any) {
       console.error("Transaction failed:", err);
       setError(err.message || "Transaction failed");
@@ -285,10 +352,14 @@ export function VaultRedeemInterface() {
             <Label>Select Network</Label>
             <Select
               value={selectedChain}
-              onValueChange={(value) => setSelectedChain(value as keyof typeof SUPPORTED_CHAINS)}
+              onValueChange={handleChainSelect}
+              disabled={chainSwitching}
             >
               <SelectTrigger>
                 <SelectValue />
+                {chainSwitching && (
+                  <Loader2 className="w-4 h-4 animate-spin ml-2" />
+                )}
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="BASE">Base</SelectItem>
@@ -296,7 +367,54 @@ export function VaultRedeemInterface() {
                 <SelectItem value="UNICHAIN">Unichain</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Chain Status Indicator */}
+            {userAddress && (
+              <div className="flex items-center gap-2 text-sm">
+                {isOnCorrectChain ? (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    Connected to {CHAIN_NAMES[currentChainId]}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-orange-600">
+                      <AlertCircle className="w-4 h-4" />
+                      Wrong network - Please switch to{" "}
+                      {CHAIN_NAMES[currentChainId]}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleManualChainSwitch}
+                      disabled={chainSwitching}
+                      className="ml-2"
+                    >
+                      {chainSwitching ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Switching...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          Switch Network
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Chain Switching Loading */}
+          {chainSwitching && (
+            <div className="flex items-center gap-2 text-blue-600 bg-blue-50 p-3 rounded-lg">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Switching to {CHAIN_NAMES[currentChainId]}...
+            </div>
+          )}
 
           {/* Positions Loading/Error */}
           {loading && (
@@ -335,7 +453,9 @@ export function VaultRedeemInterface() {
                 <Select
                   value={selectedPosition?.vault.address || ""}
                   onValueChange={(address) => {
-                    const position = positions.find(p => p.vault.address === address);
+                    const position = positions.find(
+                      (p) => p.vault.address === address
+                    );
                     setSelectedPosition(position || null);
                   }}
                 >
@@ -350,7 +470,8 @@ export function VaultRedeemInterface() {
                             {position.vault.name || `Vault ${idx + 1}`}
                           </span>
                           <span className="text-xs text-slate-500">
-                            ${formatUSD(position.assetsUsd)} • {formatShares(position.shares)} shares
+                            ${formatUSD(position.assetsUsd)} •{" "}
+                            {formatShares(position.shares)} shares
                           </span>
                         </div>
                       </SelectItem>
@@ -387,19 +508,34 @@ export function VaultRedeemInterface() {
               )}
 
               {/* Redeem Actions */}
-              <Tabs value={redeemAction.type} onValueChange={(value) => 
-                setRedeemAction(prev => ({ ...prev, type: value as RedeemAction["type"] }))
-              }>
+              <Tabs
+                value={redeemAction.type}
+                onValueChange={(value) =>
+                  setRedeemAction((prev) => ({
+                    ...prev,
+                    type: value as RedeemAction["type"],
+                  }))
+                }
+              >
                 <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="redeem" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="redeem"
+                    className="flex items-center gap-2"
+                  >
                     <DollarSign className="w-4 h-4" />
                     Redeem
                   </TabsTrigger>
-                  <TabsTrigger value="withdraw" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="withdraw"
+                    className="flex items-center gap-2"
+                  >
                     <ArrowDownUp className="w-4 h-4" />
                     Withdraw
                   </TabsTrigger>
-                  <TabsTrigger value="transfer" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="transfer"
+                    className="flex items-center gap-2"
+                  >
                     <Send className="w-4 h-4" />
                     Transfer
                   </TabsTrigger>
@@ -410,7 +546,8 @@ export function VaultRedeemInterface() {
                     <div className="flex items-start gap-2">
                       <Info className="w-4 h-4 mt-0.5 text-blue-600" />
                       <div className="text-sm text-blue-700 dark:text-blue-300">
-                        Redeem your vault shares for the underlying assets. You'll receive the assets in your wallet.
+                        Redeem your vault shares for the underlying assets.
+                        You'll receive the assets in your wallet.
                       </div>
                     </div>
                   </div>
@@ -422,7 +559,12 @@ export function VaultRedeemInterface() {
                         type="number"
                         placeholder="0.0"
                         value={redeemAction.amount}
-                        onChange={(e) => setRedeemAction(prev => ({ ...prev, amount: e.target.value }))}
+                        onChange={(e) =>
+                          setRedeemAction((prev) => ({
+                            ...prev,
+                            amount: e.target.value,
+                          }))
+                        }
                       />
                       <Button variant="outline" onClick={handleMaxAmount}>
                         Max
@@ -436,7 +578,12 @@ export function VaultRedeemInterface() {
                       type="number"
                       placeholder="0.0"
                       value={redeemAction.minOut}
-                      onChange={(e) => setRedeemAction(prev => ({ ...prev, minOut: e.target.value }))}
+                      onChange={(e) =>
+                        setRedeemAction((prev) => ({
+                          ...prev,
+                          minOut: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </TabsContent>
@@ -446,7 +593,8 @@ export function VaultRedeemInterface() {
                     <div className="flex items-start gap-2">
                       <Info className="w-4 h-4 mt-0.5 text-blue-600" />
                       <div className="text-sm text-blue-700 dark:text-blue-300">
-                        Withdraw a specific amount of underlying assets. The required shares will be burned automatically.
+                        Withdraw a specific amount of underlying assets. The
+                        required shares will be burned automatically.
                       </div>
                     </div>
                   </div>
@@ -457,7 +605,12 @@ export function VaultRedeemInterface() {
                       type="number"
                       placeholder="0.0"
                       value={redeemAction.amount}
-                      onChange={(e) => setRedeemAction(prev => ({ ...prev, amount: e.target.value }))}
+                      onChange={(e) =>
+                        setRedeemAction((prev) => ({
+                          ...prev,
+                          amount: e.target.value,
+                        }))
+                      }
                     />
                   </div>
 
@@ -467,7 +620,12 @@ export function VaultRedeemInterface() {
                       type="number"
                       placeholder="0.0"
                       value={redeemAction.minOut}
-                      onChange={(e) => setRedeemAction(prev => ({ ...prev, minOut: e.target.value }))}
+                      onChange={(e) =>
+                        setRedeemAction((prev) => ({
+                          ...prev,
+                          minOut: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </TabsContent>
@@ -477,7 +635,8 @@ export function VaultRedeemInterface() {
                     <div className="flex items-start gap-2">
                       <Info className="w-4 h-4 mt-0.5 text-blue-600" />
                       <div className="text-sm text-blue-700 dark:text-blue-300">
-                        Transfer your vault shares to another address. The recipient will own the shares and can redeem them later.
+                        Transfer your vault shares to another address. The
+                        recipient will own the shares and can redeem them later.
                       </div>
                     </div>
                   </div>
@@ -489,7 +648,12 @@ export function VaultRedeemInterface() {
                         type="number"
                         placeholder="0.0"
                         value={redeemAction.amount}
-                        onChange={(e) => setRedeemAction(prev => ({ ...prev, amount: e.target.value }))}
+                        onChange={(e) =>
+                          setRedeemAction((prev) => ({
+                            ...prev,
+                            amount: e.target.value,
+                          }))
+                        }
                       />
                       <Button variant="outline" onClick={handleMaxAmount}>
                         Max
@@ -503,7 +667,12 @@ export function VaultRedeemInterface() {
                       type="text"
                       placeholder="0x..."
                       value={redeemAction.recipient}
-                      onChange={(e) => setRedeemAction(prev => ({ ...prev, recipient: e.target.value }))}
+                      onChange={(e) =>
+                        setRedeemAction((prev) => ({
+                          ...prev,
+                          recipient: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </TabsContent>
@@ -516,7 +685,10 @@ export function VaultRedeemInterface() {
                   txLoading ||
                   !selectedPosition ||
                   !redeemAction.amount ||
-                  (redeemAction.type === "transfer" && !redeemAction.recipient)
+                  (redeemAction.type === "transfer" &&
+                    !redeemAction.recipient) ||
+                  !isOnCorrectChain ||
+                  chainSwitching
                 }
                 className="w-full"
                 size="lg"
@@ -526,11 +698,22 @@ export function VaultRedeemInterface() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Processing...
                   </>
+                ) : !isOnCorrectChain ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Switch to {CHAIN_NAMES[currentChainId]} First
+                  </>
                 ) : (
                   <>
-                    {redeemAction.type === "redeem" && <DollarSign className="w-4 h-4 mr-2" />}
-                    {redeemAction.type === "withdraw" && <ArrowDownUp className="w-4 h-4 mr-2" />}
-                    {redeemAction.type === "transfer" && <Send className="w-4 h-4 mr-2" />}
+                    {redeemAction.type === "redeem" && (
+                      <DollarSign className="w-4 h-4 mr-2" />
+                    )}
+                    {redeemAction.type === "withdraw" && (
+                      <ArrowDownUp className="w-4 h-4 mr-2" />
+                    )}
+                    {redeemAction.type === "transfer" && (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
                     {redeemAction.type === "redeem" && "Redeem Shares"}
                     {redeemAction.type === "withdraw" && "Withdraw Assets"}
                     {redeemAction.type === "transfer" && "Transfer Shares"}
