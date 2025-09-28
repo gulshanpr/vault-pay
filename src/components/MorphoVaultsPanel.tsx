@@ -58,7 +58,7 @@ export default function MorphoVaultsPanel() {
                 {(() => {
                   const tvl = item.vaultByAddress?.state?.totalAssetsUsd;
                   const num = tvl ? Number(tvl) : null;
-                  return `TVL: ${num !== null && !Number.isNaN(num) ? num.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'n/a'}`;
+                  return `TVL: $${num !== null && !Number.isNaN(num) ? num.toLocaleString(undefined, { maximumFractionDigits: 2 }) : 'n/a'}`;
                 })()}
               </div>
               <div>
