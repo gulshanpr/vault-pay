@@ -59,7 +59,7 @@ export type {
 
 // Simple convenience functions
 import { VaultPaySDK } from './VaultPaySDK';
-import type { VaultPayConfig } from './VaultPaySDK';
+import type { VaultPayConfig } from './types';
 
 /**
  * Create a new VaultPay SDK instance with simplified configuration

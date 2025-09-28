@@ -111,18 +111,11 @@ export function SwapInterface() {
     if (!fromToken || !toToken || !fromAmount || !quote) return;
 
     try {
-      const orderHashResult = await placeOrder(quote);
-
-      if (orderHashResult) {
-        // Start monitoring order status
-        monitorOrderStatus(orderHashResult, (status) => {
-          console.log("Order status:", status);
-          if (status === 'executed') {
-            console.log("Swap completed successfully!");
-          }
-        });
-      }
-    } catch (error) {
+      await placeOrder(quote);
+      // The placeOrder function handles the order placement internally
+      // If we get here without an error, the order was placed successfully
+      console.log("Swap order placed successfully!");
+    } catch (error: any) {
       console.error("Swap failed:", error);
     }
   };
