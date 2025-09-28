@@ -1,7 +1,6 @@
 "use client";
 
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { ENSCard } from "@/components/ENSCard";
 import { ConnectedWalletDisplay } from "@/components/ConnectedWalletDisplay";
 import MorphoVaultsPanel from "@/components/MorphoVaultsPanel";
 import MorphoUserPositions from "@/components/MorphoUserPositions";
@@ -19,10 +18,7 @@ export default function DashboardHomePage() {
           </div>
           {/* ENS Domain Setup */}
           <div className="mb-8">
-            <ENSCard onENSUpdate={(ensData) => {
-              console.log('ENS updated:', ensData);
-              // You can handle ENS updates here - save to merchant registry, etc.
-            }} />
+            
           </div>
 
           {/* Welcome Section */}
@@ -68,7 +64,7 @@ export default function DashboardHomePage() {
               <p className="text-slate-600 dark:text-slate-300 mb-4">
                 Use the 1inch integration to swap tokens across chains
               </p>
-              <a href="/swap" className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+              <a href="/vault-router" className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
                 Open Swap
               </a>
             </div>

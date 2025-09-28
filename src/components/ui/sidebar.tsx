@@ -27,7 +27,6 @@ const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
   { name: "Merchant Setup", href: "/merchant-setup", icon: Building2 },
-  { name: "Swap", href: "/swap", icon: ArrowLeftRight },
   { name: "Vault Router", href: "/vault-router", icon: ArrowRightLeft },
 ];
 
