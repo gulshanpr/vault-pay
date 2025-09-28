@@ -160,21 +160,6 @@ export default function YieldBackedPaymentsLandingPage() {
         </div>
       </section>
 
-      {/* SDK Demo Section */}
-      <section className="py-16 px-4 bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-purple-950/20 dark:via-slate-900 dark:to-indigo-950/20">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              🚀 Live SDK Demo
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-              Experience the VaultPay SDK in action. Complete payment infrastructure with cross-chain swaps, yield generation, and ENS integration.
-            </p>
-          </div>
-          
-          <VaultPayIntegration />
-        </div>
-      </section>
 
       {/* Payment SDK Flow Section */}
       <section className="py-24 px-4 bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-blue-950/20 dark:via-slate-900 dark:to-blue-950/20">
