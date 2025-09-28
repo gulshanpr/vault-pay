@@ -29,7 +29,7 @@ export default function EulerVaultsPanel() {
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-slate-200 dark:border-slate-700">
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Euler Vaults (Base / Arbitrum / Unichain)</h3>
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Euler Vaults (Base / Unichain)</h3>
       <div className="space-y-3">
         {data.filter((i) => i.chain !== 'arb').map((item, idx) => (
           <div key={idx} className="flex items-center justify-between">

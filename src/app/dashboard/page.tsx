@@ -2,10 +2,8 @@
 
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { ConnectedWalletDisplay } from "@/components/ConnectedWalletDisplay";
-import MorphoVaultsPanel from "@/components/MorphoVaultsPanel";
 import MorphoUserPositions from "@/components/MorphoUserPositions";
-import EulerVaultsPanel from "@/components/EulerVaultsPanel";
-import EulerUserPositions from "@/components/EulerUserPositions";
+// import EulerUserPositions from "@/components/EulerUserPositions";
 
 export default function DashboardHomePage() {
   return (
@@ -70,23 +68,13 @@ export default function DashboardHomePage() {
             </div>
           </div>
 
-          {/* Morpho Vaults Status */}
-          <div className="mt-8">
-            <MorphoVaultsPanel />
-          </div>
-
           {/* Your Positions */}
           <div className="mt-8">
             <MorphoUserPositions />
           </div>
-
-          {/* Euler Panels */}
-          <div className="mt-8">
-            <EulerVaultsPanel />
-          </div>
-          <div className="mt-8">
+          {/* <div className="mt-8">
             <EulerUserPositions />
-          </div>
+          </div> */}
         </div>
       </div>
     </DashboardLayout>
