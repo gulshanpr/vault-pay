@@ -62,19 +62,6 @@ const PAYOUT_TOKENS = {
   ],
 };
 
-interface MerchantOnboardingFormProps {
-  onSubmit?: (data: MerchantFormData) => Promise<void> | void;
-}
-
-export interface MerchantFormData {
-  merchantWallet: string;
-  payoutToken: string;
-  payoutChainId: number;
-  payoutMode: PayoutMode;
-  splitBps: number;
-  protocolFeeBps: number;
-  feeRecipient: string;
-}
 
 export function MerchantOnboardingForm({
   onSubmit,
@@ -629,3 +616,5 @@ export function MerchantOnboardingForm({
     </div>
   );
 }
+export { MerchantFormData };
+

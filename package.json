@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@1inch/cross-chain-sdk": "^1.0.2",
+    "@1inch/fusion-sdk": "^1.0.0",
     "@next/font": "^14.2.15",
     "@privy-io/react-auth": "^3.0.1",
     "@privy-io/wagmi": "^2.0.0",

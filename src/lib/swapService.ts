@@ -1,155 +1,390 @@
-import { SDK, HashLock, PrivateKeyProviderConnector, NetworkEnum } from "@1inch/cross-chain-sdk";
-import Web3 from "web3";
+import { SDK, HashLock, NetworkEnum } from "@1inch/cross-chain-sdk";
 import { randomBytes } from "crypto";
 import { solidityPackedKeccak256 } from "ethers";
+import {
+  SupportedCombination,
+  getBestTargetCombination,
+  SUPPORTED_CHAINS,
+} from "@/config/supportedCombinations";
+import { Token } from "@/lib/tokenService";
 
-// TODO write formal bug for this function being inaccessible
-function getRandomBytes32() {
-  // for some reason the cross-chain-sdk expects a leading 0x and can't handle a 32 byte long hex string
-  return '0x' + Buffer.from(randomBytes(32)).toString('hex');
+// Utility function to generate random bytes32
+export function getRandomBytes32(): string {
+  return "0x" + Buffer.from(randomBytes(32)).toString("hex");
 }
 
+// ERC20 approve ABI
+export const approveABI = [
+  {
+    constant: false,
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
+
+// 1inch Aggregation Router v6 address
+export const AGGREGATION_ROUTER_V6 =
+  "0x111111125421ca6dc452d289314280a0f8842a65";
+
+// Chain mappings for 1inch
+export const CHAIN_TO_NETWORK_ENUM: Record<number, NetworkEnum> = {
+  [SUPPORTED_CHAINS.ARBITRUM]: NetworkEnum.ARBITRUM,
+  [SUPPORTED_CHAINS.BASE]: NetworkEnum.COINBASE,
+  // Add more chains as 1inch supports them
+} as const;
+
 export interface SwapParams {
-  srcChainId: NetworkEnum;
-  dstChainId: NetworkEnum;
+  srcChainId: number;
+  dstChainId: number;
   srcTokenAddress: string;
   dstTokenAddress: string;
   amount: string;
   walletAddress: string;
 }
 
-export interface SwapQuote {
-  quote: any;
-  orderHash?: string;
-  status?: string;
+export interface SwapCallbacks {
+  onQuoteReceived?: (quote: any) => void;
+  onOrderPlaced?: (orderHash: string) => void;
+  onFillFound?: (fill: any) => void;
+  onOrderComplete?: () => void;
+  onError?: (error: any) => void;
 }
 
-export class SwapService {
-  private sdk: SDK | null = null;
-  private web3Instance: Web3 | null = null;
+export interface VaultSwapParams {
+  fromChainId: number;
+  fromToken: Token;
+  toChainId: number;
+  toTokenAddress: string;
+  amount: string;
+  walletAddress: string;
+}
 
-  constructor() {
-    this.initializeSDK();
+export class VaultSwapService {
+  private devPortalApiKey: string;
+
+  constructor(devPortalApiKey: string) {
+    this.devPortalApiKey = devPortalApiKey;
   }
 
-  private async initializeSDK() {
-    try {
-      const nodeUrl = process.env.NEXT_PUBLIC_RPC_URL;
-      const devPortalApiKey = process.env.NEXT_PUBLIC_DEV_PORTAL_KEY;
-      const makerPrivateKey = process.env.NEXT_PUBLIC_WALLET_KEY;
+  /**
+   * Creates SDK instance compatible with Wagmi/Privy
+   */
+  private createSDK(walletClient: any, publicClient: any): SDK {
+    // Create a Web3 provider wrapper for the SDK
+    const web3Provider = {
+      send: async (method: string, params: any[]) => {
+        try {
+          switch (method) {
+            case "eth_sendTransaction":
+              const hash = await walletClient.sendTransaction(params[0]);
+              return hash;
+            case "eth_call":
+              return await publicClient.call({
+                to: params[0].to,
+                data: params[0].data,
+              });
+            case "eth_getBalance":
+              return await publicClient.getBalance({ address: params[0] });
+            case "eth_getTransactionCount":
+              return await publicClient.getTransactionCount({
+                address: params[0],
+              });
+            case "eth_estimateGas":
+              return await publicClient.estimateGas(params[0]);
+            case "eth_gasPrice":
+              return await publicClient.getGasPrice();
+            case "eth_chainId":
+              return `0x${publicClient.chain.id.toString(16)}`;
+            default:
+              throw new Error(`Unsupported method: ${method}`);
+          }
+        } catch (error) {
+          console.error(
+            `Error in web3Provider.send for method ${method}:`,
+            error
+          );
+          throw error;
+        }
+      },
+    };
 
-      if (!nodeUrl || !devPortalApiKey || !makerPrivateKey) {
-        console.warn("Missing required environment variables for swap service");
-        return;
-      }
-
-      this.web3Instance = new Web3(nodeUrl);
-      // Fix: Pass only the provider, not the full Web3 instance, to PrivateKeyProviderConnector
-      const blockchainProvider = new PrivateKeyProviderConnector(makerPrivateKey, this.web3Instance.currentProvider as any);
-
-      this.sdk = new SDK({
-        url: 'https://api.1inch.dev/fusion-plus',
-        authKey: devPortalApiKey,
-        blockchainProvider
-      });
-    } catch (error) {
-      console.error("Failed to initialize swap SDK:", error);
-    }
+    return new SDK({
+      url: "https://api.1inch.dev/fusion-plus",
+      authKey: this.devPortalApiKey,
+      blockchainProvider: web3Provider,
+    });
   }
 
-  async getQuote(params: SwapParams): Promise<any> {
-    if (!this.sdk) {
-      throw new Error("SDK not initialized");
+  /**
+   * Execute swap from any token to supported vault token
+   */
+  async executeVaultSwap(
+    params: VaultSwapParams,
+    walletClient: any,
+    publicClient: any,
+    callbacks?: SwapCallbacks
+  ): Promise<void> {
+    const {
+      fromChainId,
+      fromToken,
+      toChainId,
+      toTokenAddress,
+      amount,
+      walletAddress,
+    } = params;
+
+    // Convert chain IDs to 1inch NetworkEnum
+    const srcNetworkId = CHAIN_TO_NETWORK_ENUM[fromChainId];
+    const dstNetworkId = CHAIN_TO_NETWORK_ENUM[toChainId];
+
+    if (!srcNetworkId || !dstNetworkId) {
+      throw new Error(
+        `Unsupported chain for swapping: src=${fromChainId}, dst=${toChainId}`
+      );
     }
 
+    const sdk = this.createSDK(walletClient, publicClient);
+
+    const swapParams: SwapParams = {
+      srcChainId: srcNetworkId,
+      dstChainId: dstNetworkId,
+      srcTokenAddress: fromToken.address,
+      dstTokenAddress: toTokenAddress,
+      amount,
+      walletAddress,
+    };
+
+    console.log("Executing vault swap with params:", swapParams);
+
     try {
-      const quote = await this.sdk.getQuote({
-        srcChainId: Number(params.srcChainId),
-        dstChainId: Number(params.dstChainId),
-        srcTokenAddress: params.srcTokenAddress,
-        dstTokenAddress: params.dstTokenAddress,
-        amount: params.amount,
+      // Get quote
+      const quote = await sdk.getQuote({
+        srcChainId: swapParams.srcChainId,
+        dstChainId: swapParams.dstChainId,
+        srcTokenAddress: swapParams.srcTokenAddress,
+        dstTokenAddress: swapParams.dstTokenAddress,
+        amount: swapParams.amount,
         enableEstimate: true,
-        walletAddress: params.walletAddress
+        walletAddress: swapParams.walletAddress,
       });
 
-      return quote;
+      console.log("Received Fusion+ quote from 1inch API");
+      callbacks?.onQuoteReceived?.(quote);
+
+      // Generate secrets and hash locks
+      const secretsCount = quote.getPreset().secretsCount;
+      const secrets = Array.from({ length: secretsCount }).map(() =>
+        getRandomBytes32()
+      );
+      const secretHashes = secrets.map((x) => HashLock.hashSecret(x));
+
+      const hashLock =
+        secretsCount === 1
+          ? HashLock.forSingleFill(secrets[0])
+          : HashLock.forMultipleFills(
+              secretHashes.map((secretHash, i) =>
+                solidityPackedKeccak256(
+                  ["uint64", "bytes32"],
+                  [i, secretHash.toString()]
+                )
+              )
+            );
+
+      // Place order
+      const quoteResponse = await sdk.placeOrder(quote, {
+        walletAddress: swapParams.walletAddress,
+        hashLock,
+        secretHashes,
+      });
+
+      const orderHash = quoteResponse.orderHash;
+      console.log(`Order successfully placed: ${orderHash}`);
+      callbacks?.onOrderPlaced?.(orderHash);
+
+      // Monitor order status
+      await this.monitorOrderStatus(
+        sdk,
+        orderHash,
+        secrets,
+        secretHashes,
+        callbacks
+      );
     } catch (error) {
-      console.error("Error getting quote:", error);
+      console.error("Error in executeVaultSwap:", error);
+      callbacks?.onError?.(error);
       throw error;
     }
   }
 
-  async placeOrder(quote: any, walletAddress: string): Promise<string> {
-    if (!this.sdk) {
-      throw new Error("SDK not initialized");
-    }
-
-    try {
-      const secretsCount = quote.getPreset().secretsCount;
-      const secrets = Array.from({ length: secretsCount }).map(() => getRandomBytes32());
-      const secretHashes = secrets.map(x => HashLock.hashSecret(x));
-
-      const hashLock = secretsCount === 1
-        ? HashLock.forSingleFill(secrets[0])
-        : HashLock.forMultipleFills(
-            secretHashes.map((secretHash, i) =>
-              solidityPackedKeccak256(['uint64', 'bytes32'], [i, secretHash.toString()])
-            ) as any
+  /**
+   * Monitor order status and submit secrets when fills are ready
+   */
+  private async monitorOrderStatus(
+    sdk: SDK,
+    orderHash: string,
+    secrets: string[],
+    secretHashes: any[],
+    callbacks?: SwapCallbacks
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const intervalId = setInterval(async () => {
+        try {
+          console.log(
+            `Polling for fills until order status is set to "executed"...`
           );
 
-      const quoteResponse = await this.sdk.placeOrder(quote, {
-        walletAddress,
-        hashLock,
-        secretHashes
-      });
+          const order = await sdk.getOrderStatus(orderHash);
+          if (order.status === "executed") {
+            console.log(`Order is complete. Exiting.`);
+            clearInterval(intervalId);
+            callbacks?.onOrderComplete?.();
+            resolve();
+            return;
+          }
 
-      return quoteResponse.orderHash;
-    } catch (error) {
-      console.error("Error placing order:", error);
-      throw error;
-    }
+          const fillsObject = await sdk.getReadyToAcceptSecretFills(orderHash);
+          if (fillsObject.fills.length > 0) {
+            for (const fill of fillsObject.fills) {
+              try {
+                await sdk.submitSecret(orderHash, secrets[fill.idx]);
+                console.log(
+                  `Fill order found! Secret submitted: ${JSON.stringify(
+                    secretHashes[fill.idx],
+                    null,
+                    2
+                  )}`
+                );
+                callbacks?.onFillFound?.(fill);
+              } catch (error: any) {
+                console.error(
+                  `Error submitting secret: ${JSON.stringify(error, null, 2)}`
+                );
+              }
+            }
+          }
+        } catch (error: any) {
+          console.error("Error in polling:", error);
+          if (error.response?.status !== 404) {
+            // 404 is expected when no fills are ready
+            callbacks?.onError?.(error);
+          }
+        }
+      }, 5000);
+
+      // Clean up interval after 10 minutes to prevent infinite polling
+      setTimeout(() => {
+        clearInterval(intervalId);
+        reject(new Error("Polling timeout reached"));
+      }, 10 * 60 * 1000);
+    });
   }
 
-  async getOrderStatus(orderHash: string): Promise<any> {
-    if (!this.sdk) {
-      throw new Error("SDK not initialized");
-    }
+  /**
+   * Approve token for spending by 1inch router
+   */
+  async approveToken(
+    tokenAddress: string,
+    chainId: number,
+    walletClient: any,
+    publicClient: any
+  ): Promise<string> {
+    console.log(`Approving token ${tokenAddress} on chain ${chainId}`);
 
-    try {
-      return await this.sdk.getOrderStatus(orderHash);
-    } catch (error) {
-      console.error("Error getting order status:", error);
-      throw error;
-    }
+    const hash = await walletClient.writeContract({
+      address: tokenAddress as `0x${string}`,
+      abi: approveABI,
+      functionName: "approve",
+      args: [
+        AGGREGATION_ROUTER_V6,
+        BigInt(
+          "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        ),
+      ],
+      chainId,
+    });
+
+    console.log("Approval transaction hash:", hash);
+
+    // Wait for approval confirmation
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    console.log("Approval confirmed in block:", receipt.blockNumber);
+
+    return hash;
   }
 
-  async getReadyToAcceptSecretFills(orderHash: string): Promise<any> {
-    if (!this.sdk) {
-      throw new Error("SDK not initialized");
+  /**
+   * Get the best route for swapping to a supported vault token
+   */
+  getSwapRoute(
+    fromChainId: number,
+    fromTokenAddress: string
+  ): {
+    needsSwap: boolean;
+    target?: SupportedCombination;
+    message?: string;
+  } {
+    // Check if already supported
+    const isSupported = this.isCombinationSupported(
+      fromChainId,
+      fromTokenAddress
+    );
+
+    if (isSupported) {
+      return { needsSwap: false };
     }
 
-    try {
-      return await this.sdk.getReadyToAcceptSecretFills(orderHash);
-    } catch (error) {
-      console.error("Error getting ready to accept secret fills:", error);
-      throw error;
+    // Find best target
+    const target = getBestTargetCombination(fromChainId);
+    const targetChainName = this.getChainName(target.chainId);
+    const sourceChainName = this.getChainName(fromChainId);
+
+    let message: string;
+    if (target.chainId === fromChainId) {
+      message = `Token not supported. Will swap to ${target.symbol} on ${targetChainName}.`;
+    } else {
+      message = `Token on ${sourceChainName} not supported. Will swap to ${target.symbol} on ${targetChainName}.`;
     }
+
+    return {
+      needsSwap: true,
+      target,
+      message,
+    };
   }
 
-  async submitSecret(orderHash: string, secret: string): Promise<void> {
-    if (!this.sdk) {
-      throw new Error("SDK not initialized");
-    }
+  private isCombinationSupported(
+    chainId: number,
+    tokenAddress: string
+  ): boolean {
+    // Import this from your supportedCombinations file
+    const {
+      isCombinationSupported,
+    } = require("@/config/supportedCombinations");
+    return isCombinationSupported(chainId, tokenAddress);
+  }
 
-    try {
-      await this.sdk.submitSecret(orderHash, secret);
-    } catch (error) {
-      console.error("Error submitting secret:", error);
-      throw error;
+  private getChainName(chainId: number): string {
+    switch (chainId) {
+      case SUPPORTED_CHAINS.BASE:
+        return "Base";
+      case SUPPORTED_CHAINS.ARBITRUM:
+        return "Arbitrum";
+      case SUPPORTED_CHAINS.UNICHAIN:
+        return "Unichain";
+      default:
+        return `Chain ${chainId}`;
     }
   }
 }
 
-// Singleton instance
-export const swapService = new SwapService();
+// Export a singleton instance
+export const vaultSwapService = new VaultSwapService(
+  process.env.NEXT_PUBLIC_DEV_PORTAL_KEY || ""
+);
