@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LavaLamp } from "@/components/ui/fluid-blob";
 import { GooeyMarquee } from "@/components/ui/gooey-marquee";
+import { Features } from "@/components/ui/features";
 import ConnectWalletButton from '@/components/ConnectWalletButton';
 import { VaultPayIntegration } from '@/components/VaultPayIntegration';
 import {
@@ -15,12 +16,71 @@ import {
   DollarSign,
   Layers,
   CreditCard,
+  Wallet,
+  Zap,
+  Shield,
+  RefreshCw,
+  Users,
+  PiggyBank,
+  Globe,
+  Smartphone,
 } from "lucide-react";
 
 export default function YieldBackedPaymentsLandingPage() {
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [formData, setFormData] = useState({ name: '', email: '' });
+
+  const paymentSdkFeatures = [
+    {
+      id: 1,
+      icon: Users,
+      title: "Merchant Onboarding",
+      description: "Merchants connect their wallet and configure payout preferences (USDC_ONLY, SHARES_ONLY, or SPLIT) to set up their payment infrastructure.",
+    },
+    {
+      id: 2,
+      icon: Wallet,
+      title: "Wallet Authentication",
+      description: "Seamless integration with Privy Auth for secure wallet connection and user authentication across the platform.",
+    },
+    {
+      id: 3,
+      icon: Zap,
+      title: "Cross-chain Token Swaps",
+      description: "Built-in 1inch Swap API integration enables automatic token conversion to preferred settlement currencies across multiple chains.",
+    },
+    {
+      id: 4,
+      icon: PiggyBank,
+      title: "Yield-bearing Vault Shares",
+      description: "Receive ERC-4626 vault shares instead of idle USDC, automatically earning yield from DeFi protocols like Morpho and Euler.",
+    },
+    {
+      id: 5,
+      icon: Shield,
+      title: "Smart Contract Settlement",
+      description: "All payments processed through audited smart contracts on MerchantRegistry for trustless and transparent settlements.",
+    },
+    {
+      id: 6,
+      icon: Globe,
+      title: "Multi-chain Support",
+      description: "Full support for major EVM chains including Ethereum, Polygon, Arbitrum, Base, and Optimism through Wagmi integration.",
+    },
+    {
+      id: 7,
+      icon: RefreshCw,
+      title: "Real-time Dashboard",
+      description: "Monitor vault positions, track yields earned, and manage redemption options through an intuitive merchant dashboard.",
+    },
+    {
+      id: 8,
+      icon: Smartphone,
+      title: "SDK Integration",
+      description: "Simple SDK integration allows any application to accept yield-bearing payments with just a few lines of code.",
+    },
+  ];
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,85 +176,23 @@ export default function YieldBackedPaymentsLandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Payment SDK Flow Section */}
       <section className="py-24 px-4 bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-blue-950/20 dark:via-slate-900 dark:to-blue-950/20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">
-              Yield-bearing settlement features
+              How VaultPay SDK Works
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-              Merchants receive ERC-4626 vault shares that auto-earn yield, with flexible redemption options and composable transferability.
+              Complete payment infrastructure with cross-chain swaps, yield generation, and smart contract settlement
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Core Features Grid */}
-            <div className="space-y-8">
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-blue-200 dark:border-blue-800 hover:shadow-blue-200/50 transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Flexible Settlement</h3>
-                    <p className="text-slate-600 dark:text-slate-300">Choose between immediate USDC liquidity or yield-bearing vault shares that auto-earn returns</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-blue-200 dark:border-blue-800 hover:shadow-blue-200/50 transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Yield Offsets Fees</h3>
-                    <p className="text-slate-600 dark:text-slate-300">Protocol, bridge, and gas fees are covered by vault yield, making payments cheaper than traditional rails</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-blue-200 dark:border-blue-800 hover:shadow-blue-200/50 transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <ArrowRight className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Transferable Vault Shares</h3>
-                    <p className="text-slate-600 dark:text-slate-300">Directly transfer yield-earning vault shares to suppliers, employees, or partners as ERC-20 receipts</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-8">
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-blue-200 dark:border-blue-800 hover:shadow-blue-200/50 transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Credit-like Functionality</h3>
-                    <p className="text-slate-600 dark:text-slate-300">Vault share holdings enable credit lines for borrowing or early payments against future earnings</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-lg border border-blue-200 dark:border-blue-800 hover:shadow-blue-200/50 transition-all duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Layers className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Split Payments</h3>
-                    <p className="text-slate-600 dark:text-slate-300">Receive part in immediate USDC liquidity and part in yield-earning vault shares for optimal cash flow</p>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
+          <Features
+            features={paymentSdkFeatures}
+            badgeText="Payment SDK Flow"
+            title="Merchant & User Journey"
+          />
         </div>
       </section>
 
@@ -265,7 +263,7 @@ export default function YieldBackedPaymentsLandingPage() {
               <Button
                 onClick={() => setShowWaitlistModal(true)}
                 variant="outline"
-                className="border-white/20 text-white hover:bg-white/10 px-8 py-3 text-base font-medium rounded-md transition-all duration-300"
+                className="border-white/20 text-black hover:bg-white/10 px-8 py-3 text-base font-medium rounded-md transition-all duration-300"
               >
                 Join Waitlist
               </Button>
