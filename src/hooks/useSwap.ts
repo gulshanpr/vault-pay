@@ -58,8 +58,8 @@ export function useSwap() {
       try {
         const sdk = vaultSwapService["createSDK"](walletClient, publicClient);
         const quote = await sdk.getQuote({
-          srcChainId: params.srcChainId,
-          dstChainId: params.dstChainId,
+          srcChainId: params.srcChainId as any,
+          dstChainId: params.dstChainId as any,
           srcTokenAddress: params.srcTokenAddress,
           dstTokenAddress: params.dstTokenAddress,
           amount: params.amount,

@@ -113,6 +113,18 @@ export class VaultSwapService {
           throw error;
         }
       },
+      signTypedData: async (walletAddress: string, typedData: any) => {
+        return await walletClient.signTypedData({
+          account: walletAddress as `0x${string}`,
+          ...typedData,
+        });
+      },
+      ethCall: async (contractAddress: string, callData: string) => {
+        return await publicClient.call({
+          to: contractAddress as `0x${string}`,
+          data: callData as `0x${string}`,
+        });
+      },
     };
 
     return new SDK({
@@ -189,12 +201,7 @@ export class VaultSwapService {
         secretsCount === 1
           ? HashLock.forSingleFill(secrets[0])
           : HashLock.forMultipleFills(
-              secretHashes.map((secretHash, i) =>
-                solidityPackedKeccak256(
-                  ["uint64", "bytes32"],
-                  [i, secretHash.toString()]
-                )
-              )
+              HashLock.getMerkleLeavesFromSecretHashes(secretHashes)
             );
 
       // Place order

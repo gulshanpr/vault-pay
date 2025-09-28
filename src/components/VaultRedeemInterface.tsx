@@ -193,7 +193,7 @@ export function VaultRedeemInterface() {
       }
 
       const sharesAmount = parseUnits(redeemAction.amount, 18).toString();
-      const recipient = redeemAction.recipient || userAddress;
+      const recipient = (redeemAction.recipient || userAddress) as `0x${string}`;
       const minOut = redeemAction.minOut ? parseUnits(redeemAction.minOut, 18).toString() : "0";
 
       // Determine if this is an Euler vault (you might need to adjust this logic)
@@ -209,11 +209,13 @@ export function VaultRedeemInterface() {
           abi: isEulerVault ? eulerVaultAdapterABI : vaultAdapterABI,
           functionName: "redeemShares",
           args: [
-            selectedPosition.vault.address,
+            selectedPosition.vault.address as `0x${string}`,
             BigInt(sharesAmount),
             recipient,
             BigInt(minOut),
           ],
+          chain: currentChainId,
+          account: userAddress as `0x${string}`,
         });
       } else if (redeemAction.type === "withdraw") {
         // Withdraw specific amount of assets
@@ -225,11 +227,13 @@ export function VaultRedeemInterface() {
           abi: isEulerVault ? eulerVaultAdapterABI : vaultAdapterABI,
           functionName: "withdrawAssets",
           args: [
-            selectedPosition.vault.address,
+            selectedPosition.vault.address as `0x${string}`,
             BigInt(assetsAmount),
             recipient,
             BigInt(maxSharesIn),
           ],
+          chain: currentChainId,
+          account: userAddress as `0x${string}`,
         });
       } else {
         // Transfer shares directly (ERC20 transfer)
@@ -238,6 +242,8 @@ export function VaultRedeemInterface() {
           abi: erc20ABI,
           functionName: "transfer",
           args: [recipient, BigInt(sharesAmount)],
+          chain: currentChainId,
+          account: userAddress as `0x${string}`,
         });
       }
 

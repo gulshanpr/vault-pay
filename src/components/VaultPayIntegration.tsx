@@ -50,7 +50,7 @@ export function VaultPayIntegration() {
           
           💳 Backend Response:
           • Status: ${paymentResult.success ? 'Success' : 'Failed'}
-          • Transaction: ${paymentResult.transactionHash || 'Pending'}
+          • Transaction: ${paymentResult.data?.transactionHash || 'Pending'}
           • Amount: 0.001 ETH
           • Order ID: order-${Date.now()}
           

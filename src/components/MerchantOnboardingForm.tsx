@@ -40,6 +40,21 @@ enum PayoutMode {
   SPLIT = 2,
 }
 
+export interface MerchantFormData {
+  merchantWallet: string;
+  merchantPayout: string;
+  payoutToken: string;
+  payoutChainId: number;
+  payoutMode: PayoutMode;
+  splitBps: number;
+  protocolFeeBps: number;
+  feeRecipient: string;
+}
+
+export interface MerchantOnboardingFormProps {
+  onSubmit?: (data: MerchantFormData) => void;
+}
+
 // Chain options for the dropdown
 const CHAIN_OPTIONS = [
   { id: SUPPORTED_CHAINS.BASE, name: "Base", symbol: "BASE" },
@@ -77,6 +92,7 @@ export function MerchantOnboardingForm({
 
   const [formData, setFormData] = useState<MerchantFormData>({
     merchantWallet: "",
+    merchantPayout: "",
     payoutToken: "",
     payoutChainId: SUPPORTED_CHAINS.BASE,
     payoutMode: PayoutMode.USDC_ONLY,
@@ -107,6 +123,7 @@ export function MerchantOnboardingForm({
       setFormData((prev) => ({
         ...prev,
         merchantWallet: walletAddress,
+        merchantPayout: prev.merchantPayout || walletAddress,
         feeRecipient:
           prev.feeRecipient === "0x0000000000000000000000000000000000000000"
             ? walletAddress
@@ -148,12 +165,9 @@ export function MerchantOnboardingForm({
   // Auto-switch chain when payout chain changes
   useEffect(() => {
     if (formData.payoutChainId && currentChainId !== formData.payoutChainId) {
-      const switchPromise = switchChain({ chainId: formData.payoutChainId });
-      if (switchPromise) {
-        switchPromise.catch((error) => {
-          console.error("Failed to switch chain:", error);
-        });
-      }
+      switchChain({ chainId: formData.payoutChainId }).catch((error) => {
+        console.error("Failed to switch chain:", error);
+      });
     }
   }, [formData.payoutChainId, currentChainId, switchChain]);
 
@@ -180,6 +194,12 @@ export function MerchantOnboardingForm({
       newErrors.merchantWallet = "Merchant wallet address is required";
     } else if (!/^0x[a-fA-F0-9]{40}$/.test(formData.merchantWallet)) {
       newErrors.merchantWallet = "Invalid Ethereum address";
+    }
+
+    if (!formData.merchantPayout) {
+      newErrors.merchantPayout = "Merchant payout address is required";
+    } else if (!/^0x[a-fA-F0-9]{40}$/.test(formData.merchantPayout)) {
+      newErrors.merchantPayout = "Invalid Ethereum address";
     }
 
     if (!formData.payoutToken) {
@@ -252,8 +272,8 @@ export function MerchantOnboardingForm({
           formData.payoutToken as `0x${string}`,
           formData.payoutMode,
           formData.splitBps,
-          150, // Fixed protocol fee
-          protocolFeeAddress as `0x${string}`,
+          formData.protocolFeeBps,
+          formData.feeRecipient as `0x${string}`,
         ],
         chainId: formData.payoutChainId,
       });
@@ -398,6 +418,27 @@ export function MerchantOnboardingForm({
               )}
             </div>
 
+            {/* Merchant Payout Address */}
+            <div className="space-y-2">
+              <Label htmlFor="merchantPayout">Merchant Payout Address</Label>
+              <Input
+                id="merchantPayout"
+                type="text"
+                placeholder="0x..."
+                value={formData.merchantPayout}
+                onChange={(e) =>
+                  handleInputChange("merchantPayout", e.target.value)
+                }
+                className={errors.merchantPayout ? "border-red-500" : ""}
+              />
+              {errors.merchantPayout && (
+                <div className="flex items-center gap-2 text-sm text-red-600">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.merchantPayout}
+                </div>
+              )}
+            </div>
+
             {/* Payout Chain Selection */}
             <div className="space-y-2">
               <Label htmlFor="payoutChain">Payout Chain</Label>
@@ -536,12 +577,21 @@ export function MerchantOnboardingForm({
               <h4 className="font-medium text-sm mb-2">Registration Summary</h4>
               <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
                 <p>
-                  <strong>Merchant:</strong>{" "}
+                  <strong>Merchant Wallet:</strong>{" "}
                   {formData.merchantWallet
                     ? `${formData.merchantWallet.slice(
                         0,
                         6
                       )}...${formData.merchantWallet.slice(-4)}`
+                    : "Not set"}
+                </p>
+                <p>
+                  <strong>Payout Address:</strong>{" "}
+                  {formData.merchantPayout
+                    ? `${formData.merchantPayout.slice(
+                        0,
+                        6
+                      )}...${formData.merchantPayout.slice(-4)}`
                     : "Not set"}
                 </p>
                 <p>
@@ -616,5 +666,4 @@ export function MerchantOnboardingForm({
     </div>
   );
 }
-export { MerchantFormData };
 
