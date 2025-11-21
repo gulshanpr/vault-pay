@@ -2,7 +2,7 @@
 export const SUPPORTED_CHAINS = {
   BASE: 8453,
   ARBITRUM: 42161,
-  UNICHAIN: 130,
+  UNICHAIN: 1301,
 } as const;
 
 export const SUPPORTED_COMBINATIONS = [

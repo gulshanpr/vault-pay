@@ -19,6 +19,7 @@ import {
 } from "wagmi";
 import { useState, useEffect } from "react";
 import { parseUnits, erc20Abi } from "viem";
+import { AVAILABLE_VAULTS, VaultInfo } from "@/utils/vaultConfig";
 
 export default function VaultRouterPage() {
   const { address } = useAccount();
@@ -185,35 +186,41 @@ export default function VaultRouterPage() {
   ) => {
     setCurrentStep("Depositing to vault...");
 
-    // Determine which vault and adapter to use based on token and chain
-    let vaultAddress = "0x0000000000000000000000000000000000000000";
-    let adapterAddress = "";
-    let adapterAbi = vaultAdapter; // Default to Morpho adapter
-    let vaultType = "morpho";
+    // Find the appropriate vault based on token and chain
+    // Prefer Morpho vaults by default
+    const morphoVault = AVAILABLE_VAULTS.find(
+      (vault) =>
+        vault.protocol === "morpho" &&
+        vault.chainId === chainId &&
+        vault.token.address.toLowerCase() === tokenAddress.toLowerCase()
+    );
 
-    if (
-      chainId === 42161 &&
-      tokenAddress.toLowerCase() ===
-        "0xaf88d065e77c8cc2239327c5edb3a432268e5831"
-    ) {
-      // For USDC on Arbitrum, we have both Morpho and Euler options
-      // Let's use Morpho vault for now since VaultAdapter is designed for Morpho
-      vaultAddress = "0xa60643c90A542A95026C0F1dbdB0615fF42019Cf"; // Morpho USDC vault on Arbitrum
-      adapterAddress = getContractAddress(chainId, "VAULT_ADAPTER");
-      adapterAbi = vaultAdapter;
-      vaultType = "morpho";
+    const eulerVault = AVAILABLE_VAULTS.find(
+      (vault) =>
+        vault.protocol === "euler" &&
+        vault.chainId === chainId &&
+        vault.token.address.toLowerCase() === tokenAddress.toLowerCase()
+    );
 
-      // Alternative: Use Euler vault with EulerVaultAdapter
-      // vaultAddress = "0x6aFB8d3F6D4A34e9cB2f217317f4dc8e05Aa673b"; // Euler USDC vault on Arbitrum
-      // adapterAddress = getContractAddress(chainId, "EULER_VAULT_ADAPTER");
-      // adapterAbi = eulerVaultAdapter;
-      // vaultType = "euler";
-    } else {
-      // For other tokens, use the appropriate adapter
-      adapterAddress = getContractAddress(chainId, "VAULT_ADAPTER");
-      adapterAbi = vaultAdapter;
-      vaultType = "morpho";
+    // Use Morpho vault if available, otherwise fall back to Euler
+    const selectedVault = morphoVault || eulerVault;
+
+    if (!selectedVault) {
+      setError(
+        `No vault found for token ${tokenAddress} on chain ${chainId}. Please check the supported combinations.`
+      );
+      setIsProcessing(false);
+      setCurrentStep("");
+      return;
     }
+
+    const vaultAddress = selectedVault.vaultAddress;
+    const vaultType = selectedVault.protocol;
+    const adapterAddress = getContractAddress(
+      chainId,
+      vaultType === "morpho" ? "VAULT_ADAPTER" : "EULER_VAULT_ADAPTER"
+    );
+    const adapterAbi = vaultType === "morpho" ? vaultAdapter : eulerVaultAdapter;
 
     console.log("Using vault configuration:", {
       vaultType,
